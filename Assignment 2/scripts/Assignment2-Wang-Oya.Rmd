@@ -51,8 +51,6 @@ res$interest_over_time %>%
             sd_hits = sd(hits),
             var_hits = var(hits))
 ```
-The keyword "crime" produced a mean search hit of 55.615 with a standard deviation of 9.282 and a variance of 86.163. The keyword "loans" produced a mean search hit of 67.231 with a standard deviation of 9.924 and a variance of 98.495.\
-
 
 -   Which cities (locations) have the highest search frequency for `loans`? Note that there might be multiple rows for each city if there were hits for both "crime" and "loans" in that city. It might be easier to answer this question if we had the search hits info for both search terms in two separate variables. That is, each row would represent a unique city.
 
@@ -64,7 +62,9 @@ res$interest_by_city %>%
 # Reshape data from long to wide format using keywords
 wide_df <- res$interest_by_city %>% 
   pivot_wider(names_from = keyword,
-              values_from = hits) %>% 
+              values_from = hits)
+
+wide_df %>%   
   arrange(desc(loans)) %>% #sort loans column in descending order
   head()
 
@@ -74,10 +74,18 @@ wide_df %>%
   filter(n>1) %>%
   distinct()
 
+#If I wanted to see the data sorted by crime
+# wide_df %>%   
+#  arrange(desc(crime)) %>% #sort crime column in descending order
+#  head()
+
 ```
 The cities Long Lake, Erie, and Streamwood have the highest search frequency for `loans`.\
 
 -   Is there a relationship between the search intensities between the two keywords we used?
+Over time, the keyword `crime` had a mean search hit of 55.615 with a standard deviation of 9.282 and a variance of 86.163. The keyword `loans` had a mean search hit of 67.231 with a standard deviation of 9.924 and a variance of 98.495. While `loans` had a higher mean search frequency, there does not seem to be a large difference in the search frequency for interest over time. However, patterns can be seen in the plot. The two keywords may have an inverse relationship where search frequencies for `loans` tend to be high when `crime` is low, and vice versa. 
+\
+
 
 
 Repeat the above for keywords related to covid. Make sure you use multiple keywords like we did above. Try several different combinations and think carefully about words that might make sense within this context.
