@@ -61,21 +61,24 @@ The keyword "crime" produced a mean search hit of 55.615 with a standard deviati
 res$interest_by_city %>% 
   head()
 
-# Reshape data from long format to wide format using keywords
-res$interest_by_city %>% 
+# Reshape data from long to wide format using keywords
+wide_df <- res$interest_by_city %>% 
   pivot_wider(names_from = keyword,
               values_from = hits) %>% 
-  glimpse() %>% 
-  arrange(desc(loans)) #sort loans column in ascending order
-# Results in many NAs in loan column
+  arrange(desc(loans)) %>% #sort loans column in descending order
+  head()
+
+# Check for duplicates in location to see if reshaping worked and show in table if any exist
+wide_df %>%
+  add_count(location) %>%
+  filter(n>1) %>%
+  distinct()
 
 ```
-- The city of Clinton, IL has the highest search hits for the keyword "loans" with 44 hits. All other cities had missing search hit values.\
+The cities Long Lake, Erie, and Streamwood have the highest search frequency for `loans`.\
 
 -   Is there a relationship between the search intensities between the two keywords we used?
-```{r}
 
-```
 
 Repeat the above for keywords related to covid. Make sure you use multiple keywords like we did above. Try several different combinations and think carefully about words that might make sense within this context.
 
