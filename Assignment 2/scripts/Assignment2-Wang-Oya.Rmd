@@ -235,7 +235,9 @@ merged_df %>%
 # If household income is greater than its median, name group as above average, if not, name group as above average
 # Then compute mean by group
 merged_df %>% 
-  group_by(if_else(hh_income > median(hh_income),"above average", "below average")) %>%
+  as.numeric(hh_income) %>% 
+  mutate(hhinc_med = if_else(hh_income > median(hh_income), "above", "below")) %>% 
+  group_by(hhinc_med = if_else(hh_income > median(as.numeric(merged_df$hh_income)),"above", "below")) %>%
              summarize(mean_crime = mean(crime),
                        mean_loans = mean(loans))
 
@@ -244,6 +246,12 @@ merged_df %>%
            below_avg = (hh_income < median(hh_income)))  %>%
              summarize(mean_crime = mean(crime),
                        mean_loans = mean(loans))
+
+merged_df %>% 
+  group_by(
+    hhinc_med = ifelse(hh_income > median(hh_income, na.rm = TRUE), "above", "below")) %>% 
+             summarize(mean_crime = mean(crime, na.rm = TRUE),
+                       mean_loans = mean(loans, na.rm = TRUE))
 ```
 
 
