@@ -63,19 +63,19 @@ res$interest_by_city %>%
   head()
 
 # Reshape data from long to wide format using keywords
-wide_df <- 
+wide <- 
   res$interest_by_city %>% 
   pivot_wider(names_from = keyword,
               values_from = hits)
 
 # Check for duplicates in location to see if reshaping worked and show in table if any exist
-wide_df %>%
+wide %>%
   add_count(location) %>%
   filter(n>1) %>%
   distinct()
 
 # Sort loans column in descending order
-wide_df %>%   
+wide %>%   
   arrange(desc(loans)) %>% 
   head()
 ```
@@ -86,7 +86,7 @@ The cities Long Lake, Erie, and Streamwood have the highest search frequency for
 
 ```{r}
 # Run Pearson correlation test
-cor.test(wide_df$crime, wide_df$loans)
+cor.test(wide$crime, wide$loans)
 ```
 
 While `loans` had a higher mean search frequency over time, there does not seem to be a large difference between the search frequency of `crime`. However, patterns can be seen in the plot. The two keywords seems to have an inverse relationship where search frequencies for `loans` are high when `crime` is low in the first peak/dip around April 2020. However, the pattern fades after around July 2020. We tested the relationship between the variables for interest by city to properly with a Pearson correlation test. The test suggests that there is no significant correlation (r = -0.115, p = .72).\
@@ -95,19 +95,19 @@ Repeat the above for keywords related to covid. Make sure you use multiple keywo
 
 ```{r}
 # Create another dataset with new keywords
-res2 <- gtrends(c("masks", "deaths"), 
+res_2 <- gtrends(c("masks", "deaths"), 
                geo = "US-IL", 
                time = "2020-01-01 2020-12-31", 
                low_search_volume = TRUE)
-plot(res2)
+plot(res_2)
 ```
 
 ```{r}
-res2 %>% 
+res_2 %>% 
   head()
 
 # Compute the mean, standard deviation, and variance of search hits per keyword
-res2$interest_over_time %>% 
+res_2$interest_over_time %>% 
   group_by(keyword) %>% 
   summarize(mean_hits = mean(hits),
             sd_hits = sd(hits),
@@ -116,30 +116,39 @@ res2$interest_over_time %>%
 
 ```{r}
 # Check data
-res2$interest_by_city %>% 
-  head()
+res_2$interest_by_city %>% 
+  arrange(desc(location)) %>% 
+  glimpse()
 
-# There is a duplicate location name (Willowbrook) and pivot_wider cannot be run. Remove it from the data for the sake of this assignment
+# There is a duplicate location name (Willowbrook) and pivot_wider cannot be run
+# Check for duplicate case using code given in error message
+res_2$interest_by_city %>% 
+  group_by(location, geo, gprop, keyword) %>% 
+  summarise(n = n(), .groups = "drop") %>% 
+  filter(n > 1L) #shows duplicate location names
+
+# Remove it from the data for the sake of this assignment
 res2_nodup <- 
-  res2$interest_by_city %>% 
-  filter(!row_number() %in% c(13, 64))
+  res_2$interest_by_city %>% 
+  filter(location != "Willowbrook")
 
 # Reshape data from long to wide format using keywords
-wide2_df <- 
+wide_2 <- 
   res2_nodup %>% 
   pivot_wider(names_from = keyword,
            values_from = hits)
 
 # Sort masks column in descending order
-wide2_df %>%   
+wide_2 %>%   
   arrange(desc(masks)) %>% 
   head()
 
 # Run Pearson correlation test
-cor.test(wide2_df$masks, wide2_df$deaths)
+cor.test(wide_2$masks, wide_2$deaths)
 ```
 
-We used the keywords `masks` and `deaths`. The search frequency for `masks` over time had a mean of 34.250 with a standard deviation of 24.372 and a variance of 593.995. The search frequency for `deaths` over time had a mean of 32.865 with a standard deviation of 22.704 and a variance of 515.491. Both keywords have a similar mean and have high variances. In the plot, the frequencies have a similar shape. The initial spike in search hits of both keywords understandably corresponds to near the beginning of the pandemic when everyone was required to wear masks. We conducted a Pearson correlation test to see if the search frequencies of the two keywords have a relationship. The test revealed that there is no significant correlation (r = 0.04, p = .803).\
+We used the keywords `masks` and `deaths`. The search frequency for `masks` over time had a mean of 32.712 with a standard deviation of 23.99 and a variance of 575.543 The search frequency for `deaths` over time had a mean of 31.365 with a standard deviation of 22.03 and a variance of 485.334 Both keywords have a similar mean and have high variances. In the plot, the frequencies have a similar shape in the first half of 2020, but the pattern becomes unclear in the second half. The initial spike in search hits of both keywords understandably corresponds to near the beginning of the pandemic when everyone was required to wear masks. We conducted a Pearson correlation test to see if the search frequencies of the two keywords have a relationship. The test revealed that there is no significant correlation (r = 0.09, p = .5946).
+	
 
 ## Google Trends + ACS
 
@@ -205,27 +214,27 @@ no_cityvill <- gsub(' city, Illinois', '', no_village) #take above and remove re
 acs_with_loc <- 
   acs_il %>% 
   mutate(location = no_cityvill) #add new variable with only city names
+
 acs_with_loc %>% 
   head()
 ```
 
-\
-Answer the following questions with the "crime" and "loans" Google trends data and the ACS data.
+## Answer the following questions with the "crime" and "loans" Google trends data and the ACS data.
 
 -   First, check how many cities don't appear in both data sets, i.e. cannot be matched. Then, create a new data set by joining the Google Trends and the ACS data. Keep only cities that appear in both data sets.
 
 ```{r}
 # Check how many cities cannot be matched from ACS data
 acs_with_loc %>% 
-  anti_join(wide_df, by = "location") %>% 
+  anti_join(wide, by = "location") %>% 
   count() #show number of rows (cities)
 
 # Merge ACS to gtrends data by city only keeping cases that match
-merged_df <-
-  wide_df %>% 
+merged <-
+  wide %>% 
   left_join(acs_with_loc, by = "location")
 
-merged_df %>% 
+merged %>% 
   head()
 ```
 
@@ -234,20 +243,71 @@ merged_df %>%
 ```{r}
 # If household income is greater than its median, name group as above average, if not, name group as above average
 # Then compute mean by group
-hhinc_grouped <- merged_df %>% 
+merged %>% 
   group_by(
-    hhinc_med = ifelse(hh_income > median(hh_income, na.rm = TRUE), 
+    hhinc_med = 
+      ifelse(hh_income > median(hh_income, na.rm = TRUE), 
                        "above", "below")) %>% 
                        summarize(mean_crime = mean(crime, na.rm = TRUE),
-                       mean_loans = mean(loans, na.rm = TRUE))
+                       mean_loans = mean(loans, na.rm = TRUE)) #code doesn't work if I don't use na.rm = T
 ```
-For cities that have an above average median household income, the search popularity of `crime` was 53.027 and 46.932 for `loans`. For cities that have a below average median household income, the search popularity of `crime` was 60.64 and 51.54 for `loans`. Those in cities with below average household income had a higher search rate for both keywords. We conclude that crime rates may be higher in below average cities which may lead to more search hits, and that people in these cities may search for `loans` more because they may take out loans to support their lives due to lower financial status. \
+For cities that have an above average median household income, the search popularity of `crime` was 42.778 and 33.115 for `loans`. For cities that have a below average median household income, the search popularity of `crime` was 45.032 and 39.429 for `loans`. Those in cities with below average household income had a higher search rate for both keywords. We conclude that crime rates may be higher in below average cities which may lead to more search hits, and that people in these cities may search for `loans` more because more people in these cities may take out loans to support their lives due to a lower financial status. \
 
 -   Is there a relationship between the median household income and the search popularity of the Google trends terms? Describe the relationship and use a scatterplot with `qplot()`.
 ```{r}
-qplot(hh_income, crime, data = merged_df)
-qplot(hh_income, loans, data = merged_df)
-```
-The plot for the median household income and the search popularity of `loans` shows a clear pattern in which higher search hits are centered around the lower end of median household income. In the plot for `crime`, much of the data is gathered in the lower half of the median household income but there is no clear pattern.
+# Plot for crime
+qplot(hh_income, crime, data = merged)
 
-Repeat the above steps using the covid data and the ACS data.
+# Correlation test
+cor.test(merged$hh_income, merged$crime)
+
+# Plot for loans
+qplot(hh_income, loans, data = merged)
+
+# Correlation test
+cor.test(merged$hh_income, merged$loans)
+```
+
+In the plot for the median household income and the search popularity of `crime`, much of the data is gathered in the lower half of the median household income but there is no clear pattern. A Pearson correlation test supports this by showing that there is no correlation between the two variables (r = -0.108, p = .352). On the other hand, the plot for `loans` shows a clear pattern in which higher search hits are centered around the lower end of median household income, suggesting a relationship between the two variables. We tested this relationship using a Pearson correlation test. There was a significant correlation (r = -0.344, p < .001).
+
+## Repeat the above steps using the covid data and the ACS data.
+```{r}
+# Check how many cities cannot be matched from ACS data to covid gtrends data
+acs_with_loc %>% 
+  anti_join(wide_2, by = "location") %>% 
+  count() #show number of rows (cities)
+
+# Merge ACS to gtrends data by city only keeping cases that match
+merged_2 <-
+  wide_2 %>% 
+  left_join(acs_with_loc, by = "location")
+
+merged_2 %>% 
+  head()
+```
+
+```{r}
+# If household income is greater than its median, name group as above average, if not, name group as above average
+# Then compute mean by group
+merged_2 %>% 
+  group_by(
+    hhinc_med = 
+      ifelse(hh_income > median(hh_income, na.rm = TRUE), 
+                       "above", "below")) %>% 
+                       summarize(mean_masks = mean(masks, na.rm = TRUE),
+                       mean_deaths = mean(deaths, na.rm = TRUE)) #code doesn't work if I don't use na.rm = T
+```
+```{r}
+# Plot for masks
+qplot(hh_income, masks, data = merged_2)
+
+# Correlation test
+cor.test(merged_2$hh_income, merged_2$masks)
+
+# Plot for deaths
+qplot(hh_income, deaths, data = merged_2)
+
+# Correlation test
+cor.test(merged_2$hh_income, merged_2$deaths)
+```
+The Pearson correlation test shows that `masks` have a relationship with median household income (r = 0.324, p < .001). The data for `mask` search hits in the plot has less outliers with most of the data points gathering around the lower side of income. On the other hand, `deaths` did not have a relationship with median household income (r = 0.124, p = .209). This coincides with the data points in the plot for `deaths` being more spread out. Notably, people with lower household income who may be more at risk of being infected or spreading COVID-19 due to their socioeconomic status, may have searched for `masks` frequently to buy or make them. 
