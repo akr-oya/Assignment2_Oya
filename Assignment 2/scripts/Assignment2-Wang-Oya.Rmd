@@ -234,27 +234,20 @@ merged_df %>%
 ```{r}
 # If household income is greater than its median, name group as above average, if not, name group as above average
 # Then compute mean by group
-merged_df %>% 
-  as.numeric(hh_income) %>% 
-  mutate(hhinc_med = if_else(hh_income > median(hh_income), "above", "below")) %>% 
-  group_by(hhinc_med = if_else(hh_income > median(as.numeric(merged_df$hh_income)),"above", "below")) %>%
-             summarize(mean_crime = mean(crime),
-                       mean_loans = mean(loans))
-
-merged_df %>% 
-  group_by(above_avg = (hh_income > median(hh_income)),
-           below_avg = (hh_income < median(hh_income)))  %>%
-             summarize(mean_crime = mean(crime),
-                       mean_loans = mean(loans))
-
-merged_df %>% 
+hhinc_grouped <- merged_df %>% 
   group_by(
-    hhinc_med = ifelse(hh_income > median(hh_income, na.rm = TRUE), "above", "below")) %>% 
-             summarize(mean_crime = mean(crime, na.rm = TRUE),
+    hhinc_med = ifelse(hh_income > median(hh_income, na.rm = TRUE), 
+                       "above", "below")) %>% 
+                       summarize(mean_crime = mean(crime, na.rm = TRUE),
                        mean_loans = mean(loans, na.rm = TRUE))
 ```
-
+For cities that have an above average median household income, the search popularity of `crime` was 53.027 and 46.932 for `loans`. For cities that have a below average median household income, the search popularity of `crime` was 60.64 and 51.54 for `loans`. Those in cities with below average household income had a higher search rate for both keywords. We conclude that crime rates may be higher in below average cities which may lead to more search hits, and that people in these cities may search for `loans` more because they may take out loans to support their lives due to lower financial status. \
 
 -   Is there a relationship between the median household income and the search popularity of the Google trends terms? Describe the relationship and use a scatterplot with `qplot()`.
+```{r}
+qplot(hh_income, crime, data = merged_df)
+qplot(hh_income, loans, data = merged_df)
+```
+The plot for the median household income and the search popularity of `loans` shows a clear pattern in which higher search hits are centered around the lower end of median household income. In the plot for `crime`, much of the data is gathered in the lower half of the median household income but there is no clear pattern.
 
 Repeat the above steps using the covid data and the ACS data.
