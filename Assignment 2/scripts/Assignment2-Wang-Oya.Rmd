@@ -65,20 +65,16 @@ wide_df <- res$interest_by_city %>%
   pivot_wider(names_from = keyword,
               values_from = hits)
 
-wide_df %>%   
-  arrange(desc(loans)) %>% #sort loans column in descending order
-  head()
-
 # Check for duplicates in location to see if reshaping worked and show in table if any exist
 wide_df %>%
   add_count(location) %>%
   filter(n>1) %>%
   distinct()
 
-#If I wanted to see the data sorted by crime
-# wide_df %>%   
-#  arrange(desc(crime)) %>% #sort crime column in descending order
-#  head()
+# Sort loans column in descending order
+wide_df %>%   
+  arrange(desc(loans)) %>% 
+  head()
 ```
 The cities Long Lake, Erie, and Streamwood have the highest search frequency for `loans`.\
 
@@ -87,7 +83,7 @@ The cities Long Lake, Erie, and Streamwood have the highest search frequency for
 # Run Pearson correlation test
 cor.test(wide_df$crime, wide_df$loans)
 ```
-While `loans` had a higher mean search frequency over time, there does not seem to be a large difference between the search frequency of `crime`. However, patterns can be seen in the plot. The two keywords may have an inverse relationship where search frequencies for `loans` tend to be high when `crime` is low, and vice versa. We tested the relationship between the variables for interest by city to properly with a Pearson correlation test. The test suggests that there is no significant correlation (r = -0.115, p = .72). \
+While `loans` had a higher mean search frequency over time, there does not seem to be a large difference between the search frequency of `crime`. However, patterns can be seen in the plot. The two keywords seems to have an inverse relationship where search frequencies for `loans` are high when `crime` is low in the first peak/dip around April 2020. However, the pattern fades after around July 2020. We tested the relationship between the variables for interest by city to properly with a Pearson correlation test. The test suggests that there is no significant correlation (r = -0.115, p = .72). \
 
 
 Repeat the above for keywords related to covid. Make sure you use multiple keywords like we did above. Try several different combinations and think carefully about words that might make sense within this context.
@@ -112,35 +108,28 @@ res2$interest_over_time %>%
             var_hits = var(hits))
 ```
 ```{r}
-# Reshape data from long to wide format using keywords
-wide2_df <- res2$interest_by_city %>% 
-  pivot_wider(names_from = keyword,
-              values_from = hits)
-head(res2$interest_by_city)
-
-res2$interest_by_city %>%
-  group_by(location, geo, gprop, keyword) %>%
-  summarise(n = dplyr::n(), .groups = "drop") %>%
-  filter(n > 1L)
-
-
-wide2_df %>%   
-  arrange(desc(masks)) %>% #sort masks column in descending order
+# Check data
+res2$interest_by_city %>% 
   head()
 
-# Check for duplicates in location to see if reshaping worked and show in table if any exist
-wide2_df %>%
-  add_count(location) %>%
-  filter(n>1) %>%
-  distinct()
+# There is a duplicate location name (Willowbrook) and pivot_wider cannot be run. I will remove it from the data for the sake of this assignment
+res2_nodup <- res2$interest_by_city %>% 
+  filter(!row_number() %in% c(13, 64))
 
-#If I wanted to see the data sorted by crime
-# wide_df %>%   
-#  arrange(desc(crime)) %>% #sort crime column in descending order
-#  head()
-```
-```
+# Reshape data from long to wide format using keywords
+wide2_df <- res2_nodup %>% 
+pivot_wider(names_from = keyword,
+           values_from = hits)
 
+# Sort masks column in descending order
+wide2_df %>%   
+  arrange(desc(masks)) %>% 
+  head()
+
+# Run Pearson correlation test
+cor.test(wide2_df$masks, wide2_df$deaths)
+```
+We used the keywords `masks` and `deaths`. The search frequency for `masks` over time had a mean of 34.250 with a standard deviation of 24.372 and a variance of 593.995. The search frequency for `deaths` over time had a mean of 32.865 with a standard deviation of 22.704 and a variance of 515.491. Both keywords have a similar mean and have high variances. In the plot, the frequencies have a similar shape. The initial spike in search hits of both keywords understandably corresponds to near the beginning of the pandemic when everyone was required to wear masks. We conducted a Pearson correlation test to see if the search frequencies of the two keywords have a relationship. The test revealed that there is no significant correlation (r = 0.04, p = .803).
 
 
 ## Google Trends + ACS
