@@ -5,16 +5,17 @@ format: html
 editor: visual
 ---
 
-helpful links: selectorgadget.com, regex expression
-using 
+helpful links: selectorgadget.com, regex expression using
 
 You may work in pairs or individually for this assignment. Make sure you join a group in Canvas if you are working in pairs. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
 
-```{r}
+```{r include=FALSE}
 library(xml2)
 library(rvest)
 library(tidyverse)
 ```
+
+## Github link: https://github.com/ZuorW/SURV727.git
 
 ## Web Scraping
 
@@ -26,20 +27,67 @@ The ultimate goal is to gather the table "Historical population" and convert it 
 
 As a first step, read in the html page as an R object. Extract the tables from this object (using the `rvest` package) and save the result as a new object. Follow the instructions if there is an error. Use `str()` on this new object \-- it should be a list. Try to find the position of the "Historical population" in this list since we need it in the next step.
 
+```{r}
+# Read in Wikipedia webpage as an R object
+url <- "https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago"
+webpage <- read_html(url)
+
+# Extract tables from the webpage as data frames
+tables <- html_table(webpage)
+
+str(tables)
+tables
+```
+
 Extract the "Historical population" table from the list and save it as another object. You can use subsetting via `[[…]]` to extract pieces from a list. Print the result.
+
+```{r}
+# Extract second table only and name as pop
+pop <- tables[[2]]
+pop
+```
 
 You will see that the table needs some additional formatting. We only want rows and columns with actual values (I called the table object `pop`).
 
 ```{r}
-# pop <- pop[2:10, -3]
-# pop
+# Remove first row and third empty column to clean pop
+pop <- pop[-3] 
+pop
 ```
 
 ## Expanding to More Pages
 
 That's it for this page. However, we may want to repeat this process for other community areas. The Wikipedia page https://en.wikipedia.org/wiki/Grand_Boulevard,\_Chicago has a section on "Places adjacent to Grand Boulevard, Chicago" at the bottom. Can you find the corresponding table in the list of tables that you created earlier? Extract this table as a new object.
 
+```{r}
+# Extract fourth table and name as pop2
+pop2 <- tables[[4]]
+pop2
+```
+
 Then, grab the community areas east of Grand Boulevard and save them as a character vector. Print the result.
+
+```{r}
+nds <- html_elements(url, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "navbox-odd", " " ))]//ul | //*[contains(concat( " ", @class, " " ), concat( " ", "navbox-group", " " ))]')
+
+stats <- html_text(nds)
+head(stats)
+```
+
+
+```{r}
+# Extract fifth table and name as pop3
+pop3 <- tables[[5]]
+pop3
+colnames(pop3)[1] ="direction"
+colnames(pop3)[2] ="communities"
+pop3
+
+
+stats <- html_text(pop3)
+head(stats)
+```
+
 
 We want to use this list to create a loop that extracts the population tables from the Wikipedia pages of these places. To make this work and build valid urls, we need to replace empty spaces in the character vector with underscores. This can be done with `gsub()`, or by hand. The resulting vector should look like this: "Oakland,\_Chicago" "Kenwood,\_Chicago" "Hyde_Park,\_Chicago"
 
