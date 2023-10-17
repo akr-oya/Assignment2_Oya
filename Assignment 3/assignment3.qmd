@@ -65,27 +65,25 @@ pop2 <- tables[[4]]
 pop2
 ```
 
-Then, grab the community areas east of Grand Boulevard and save them as a character vector. Print the result.
-
-```{r}
-nds <- html_elements(url, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "navbox-odd", " " ))]//ul | //*[contains(concat( " ", @class, " " ), concat( " ", "navbox-group", " " ))]')
-
-stats <- html_text(nds)
-head(stats)
-```
-
+Then, grab the community areas east of Grand Boulevard and save them as a character vector. Print the result
 
 ```{r}
 # Extract fifth table and name as pop3
 pop3 <- tables[[5]]
 pop3
+
+# Clean up column names
 colnames(pop3)[1] ="direction"
 colnames(pop3)[2] ="communities"
 pop3
 
+# Clean up communities variable
+pop3$communities <- gsub("\n", " ", pop3$communities)
+pop3
 
-stats <- html_text(pop3)
-head(stats)
+# Take community names in row 9 (only community in the east) and save as character vector
+east <- as.character(pop3[9,2])
+east
 ```
 
 
