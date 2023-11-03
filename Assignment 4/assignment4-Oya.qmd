@@ -41,7 +41,7 @@ con
 
 We can look at the available tables in this database using `dbListTables`.
 
-```{r}
+```{r, message=FALSE}
 dbListTables(con) #see names of tables in database
 dbListFields(con, "crime") #see column names
 ```
@@ -57,14 +57,12 @@ WHERE year = 2016
 LIMIT 10;
 ```
 
-if I get an error for tbl(), use df <- dbGetQuery(con, sql)
-
 Next, count the number of arrests grouped by `primary_type` in 2016. Note that is a somewhat similar task as above, with some adjustments on which rows should be considered. Sort the results, i.e. list the number of arrests in a descending order.
 
 ```{sql connection= con, message = FALSE}
 SELECT count(arrest), primary_type
 FROM crime
-WHERE year = 2016
+WHERE year = 2016 AND arrest = TRUE
 GROUP BY primary_type
 ORDER BY count(arrest) DESC
 LIMIT 10;
@@ -75,9 +73,9 @@ We can also use the `date` for grouping. Count the number of arrests grouped by 
 ```{sql connection= con, message = FALSE}
 SELECT count(arrest), EXTRACT(HOUR FROM date)
 FROM crime
-WHERE year = 2016
+WHERE year = 2016 AND arrest = TRUE
 GROUP BY EXTRACT(HOUR FROM date)
-LIMIT 10;
+LIMIT 15;
 ```
 
 Focus only on `HOMICIDE` and count the number of arrests for this incident type, grouped by year. List the results in descending order.
@@ -85,20 +83,18 @@ Focus only on `HOMICIDE` and count the number of arrests for this incident type,
 ```{sql connection= con, message = FALSE}
 SELECT COUNT(arrest) AS arrest_count, year
 FROM crime
-WHERE primary_type = 'HOMICIDE'
+WHERE primary_type = 'HOMICIDE' AND arrest = TRUE
 GROUP BY year
 ORDER BY arrest_count DESC
 LIMIT 10;
 ```
-
-- The above counts arrests = true by default since it's a binary variable. 
 
 Find out which districts have the highest numbers of arrests in 2015 and 2016. That is, count the number of arrests in 2015 and 2016, grouped by year and district. List the results in descending order.
 
 ```{sql connection= con, message = FALSE}
 SELECT COUNT(arrest) AS arrest_count, year, district
 FROM crime
-WHERE year = 2015 OR year = 2016
+WHERE (year = 2015 OR year = 2016) AND arrest = TRUE
 GROUP BY year, district
 ORDER BY arrest_count DESC
 LIMIT 10;
@@ -109,10 +105,10 @@ LIMIT 10;
 
 Lets switch to writing queries from within R via the `DBI` package. Create a query object that counts the number of arrests grouped by `primary_type` of district 11 in year 2016. The results should be displayed in descending order.
 
-```{r}
+```{r, warning=FALSE}
 sql <- "SELECT count(arrest) as arrest_count, primary_type
         FROM crime
-        WHERE district = 11 AND year = 2016
+        WHERE district = 11 AND year = 2016 AND arrest = TRUE
         GROUP BY primary_type
         ORDER BY arrest_count DESC
         LIMIT 10"
@@ -130,6 +126,13 @@ crime <- dbGetQuery(con, "SELECT * FROM crime") # crime <- tbl(con, "crime") did
 # Check to see if object is tibble
 str(crime)
 class(crime)
+```
+```{r}
+crime %>%
+  select(arrest, primary_type, district, year) %>%
+  filter(district == 11 & year == 2016 & arrest == TRUE) %>%
+  group_by(primary_type) %>% 
+  count()
 ```
 
 Again, count the number of arrests grouped by `primary_type` of district 11 in year 2016, now using `dplyr` syntax.
