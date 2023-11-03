@@ -1,24 +1,21 @@
 ---
 title: "Assignment 4"
 subtitle: "Due at 11:59pm on November 7."
-authors: "Akari Oya, Zhouer Wang"
+authors: "Akari Oya"
 format: pdf
 editor: visual
 ---
 
 This is an individual assignment. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
 
-```{r}
-#| include: false 
+```{r, include=FALSE}
 library(tidyverse)
 library(DBI)
 library(dbplyr)
 library(bigrquery)
 ```
 
-In this notebook we will use Google BigQuery, "Google's fully managed, petabyte scale, low cost analytics data warehouse". Some instruction on how to connect to Google BigQuery can be found here: <https://db.rstudio.com/databases/big-query/>.
-
-You will need to set up a Google account with a project to be able to use this service. We will be using a public dataset that comes with 1 TB/mo of free processing on Google BigQuery. As long as you do not repeat the work in this notebook constantly, you should be fine with just the free tier.
+### Github Link = <https://github.com/akr-oya/SURVMETH727_Oya.git>
 
 Go to <https://console.cloud.google.com> and make sure you are logged in a non-university Google account. **This may not work on a university G Suite account because of restrictions on those accounts.** Create a new project by navigating to the dropdown menu at the top (it might say "Select a project") and selecting "New Project" in the window that pops up. Name it something useful.
 
@@ -44,17 +41,14 @@ con
 
 We can look at the available tables in this database using `dbListTables`.
 
-**Note**: When you run this code, you will be sent to a browser and have to give Google permissions to Tidyverse API Packages. **Make sure you select all to give access or else your code will not run.**
-
 ```{r}
-dbListTables(con)
+dbListTables(con) #see names of tables in database
+dbListFields(con, "crime") #see column names
 ```
 
-Information on the \`crime\` table can be found here:
-<https://console.cloud.google.com/marketplace/product/city-of-chicago-public-data/chicago-crime?q=search&referrer=search&authuser=2&project=surv727-database&supportedpurview=project>
+### Using SQL Code
 
 Write a first query that counts the number of rows of the \`crime\` table in the year 2016. Use code chunks with {sql connection = con} in order to write SQL code within the document.
-
 
 ```{sql connection= con, message = FALSE}
 SELECT count(*)
@@ -63,11 +57,16 @@ WHERE year = 2016
 LIMIT 10;
 ```
 
-
-if I get an error for tbl(), use
-df <- dbGetQuery(con, sql)
+if I get an error for tbl(), use df \<- dbGetQuery(con, sql)
 
 Next, count the number of arrests grouped by `primary_type` in 2016. Note that is a somewhat similar task as above, with some adjustments on which rows should be considered. Sort the results, i.e. list the number of arrests in a descending order.
+
+```{sql connection= con, message = FALSE}
+SELECT count(*)
+FROM crime
+WHERE year = 2016
+LIMIT 10;
+```
 
 We can also use the `date` for grouping. Count the number of arrests grouped by hour of the day in 2016. You can extract the latter information from `date` via `EXTRACT(HOUR FROM date)`. Which time of the day is associated with the most arrests?
 
