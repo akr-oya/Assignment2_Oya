@@ -166,6 +166,6 @@ head(sql_data, n = 10)
 
 Close the connection.
 
-```{r}
+```{r, warning=FALSE}
 dbDisconnect(con)
 ```
