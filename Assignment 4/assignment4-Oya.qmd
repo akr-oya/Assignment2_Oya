@@ -68,6 +68,24 @@ ORDER BY count(arrest) DESC
 LIMIT 10;
 ```
 
+```{r, message = FALSE, inclue=FALSE, echo = FALSE}
+# Checking if including arrest = TRUE makes a difference. It does!
+# SELECT count(arrest) AS arrest_count, arrest, primary_type
+# FROM crime
+# WHERE year = 2016 AND arrest = TRUE
+# GROUP BY arrest, primary_type
+# ORDER BY arrest_count DESC
+# LIMIT 10;
+
+# SELECT count(arrest) AS arrest_count, arrest, primary_type
+# FROM crime
+# WHERE year = 2016 AND arrest = FALSE
+# GROUP BY arrest, primary_type
+# ORDER BY arrest_count DESC
+# LIMIT 10;
+```
+
+
 We can also use the `date` for grouping. Count the number of arrests grouped by hour of the day in 2016. You can extract the latter information from `date` via `EXTRACT(HOUR FROM date)`. Which time of the day is associated with the most arrests?
 
 ```{sql connection= con, message = FALSE}
@@ -100,7 +118,6 @@ ORDER BY arrest_count DESC
 LIMIT 10;
 ```
 
-
 ### Using DBI Package
 
 Lets switch to writing queries from within R via the `DBI` package. Create a query object that counts the number of arrests grouped by `primary_type` of district 11 in year 2016. The results should be displayed in descending order.
@@ -119,6 +136,7 @@ dbGetQuery(con, sql)
 ```
 
 Try to write the very same query, now using the `dbplyr` package. For this, you need to first map the `crime` table to a tibble object in R.
+
 ```{r}
 # Assign data table to object
 crime <- dbGetQuery(con, "SELECT * FROM crime") # crime <- tbl(con, "crime") did not work
@@ -126,13 +144,6 @@ crime <- dbGetQuery(con, "SELECT * FROM crime") # crime <- tbl(con, "crime") did
 # Check to see if object is tibble
 str(crime)
 class(crime)
-```
-```{r}
-crime %>%
-  select(arrest, primary_type, district, year) %>%
-  filter(district == 11 & year == 2016 & arrest == TRUE) %>%
-  group_by(primary_type) %>% 
-  count()
 ```
 
 Again, count the number of arrests grouped by `primary_type` of district 11 in year 2016, now using `dplyr` syntax.
@@ -145,15 +156,16 @@ crime %>%
   count()
 ```
 
-Count the number of arrests grouped by `primary_type` and `year`, still only for district 11. Arrange the result by `year`. 
-Assign the results of the query above to a local R object.
+Count the number of arrests grouped by `primary_type` and `year`, still only for district 11. Arrange the result by `year`. Assign the results of the query above to a local R object.
 
 ```{r, message = FALSE}
 # Assign filtered data into another object
 sql_data <-
   crime %>%
   select(year, arrest, district, primary_type) %>%
-  filter(district == 11 & year == 2016 & arrest == TRUE) %>%
+  filter(district == 11 & arrest == TRUE) %>%
+  group_by(year, primary_type) %>% 
+  summarise(n = n()) %>% 
   collect()
 ```
 
