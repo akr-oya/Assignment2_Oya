@@ -70,11 +70,28 @@ ORDER BY count(arrest) DESC
 LIMIT 10;
 ```
 
-
-
 We can also use the `date` for grouping. Count the number of arrests grouped by hour of the day in 2016. You can extract the latter information from `date` via `EXTRACT(HOUR FROM date)`. Which time of the day is associated with the most arrests?
 
+```{sql connection= con, message = FALSE}
+SELECT count(arrest), EXTRACT(HOUR FROM date)
+FROM crime
+WHERE year = 2016
+GROUP BY EXTRACT(HOUR FROM date)
+LIMIT 10;
+```
+
 Focus only on `HOMICIDE` and count the number of arrests for this incident type, grouped by year. List the results in descending order.
+
+```{sql connection= con, message = FALSE}
+SELECT COUNT(arrest) AS arrest_count, year
+FROM crime
+WHERE primary_type = 'HOMICIDE'
+GROUP BY year
+ORDER BY arrest_count DESC
+LIMIT 10;
+```
+
+- The above counts arrests = true by default since it's a binary variable. 
 
 Find out which districts have the highest numbers of arrests in 2015 and 2016. That is, count the number of arrests in 2015 and 2016, grouped by year and district. List the results in descending order.
 
