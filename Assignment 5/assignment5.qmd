@@ -54,22 +54,27 @@ Join the ACS data with the map data. Note that `il_map` has a column `subregion`
 
 ```{r}
 # Manipulating to match datasets for merging
-
 # In ACS data, rename NAME to subregion
 acs_il_c <- acs_il_c %>% 
   rename(subregion = NAME)
 
 # Take out unnecessary part of subregion variable
 acs_il_c$subregion <- 
-  gsub(' County, Illinois', '', acs_il_c$subregion) %>% 
-  tolower() #make all lowercase
+  gsub(' County, Illinois', '', acs_il_c$subregion) 
+
+# Take out spaces in subregion variable to match data sets
+acs_il_c$subregion <-  
+  gsub(" ", "", acs_il_c$subregion) %>% 
+  tolower() #make values lowercase
+
 head(acs_il_c)
 
-
-# In il_map data, remove spaces in subregion column
+# In map data, remove spaces in subregion column
 il_map$subregion <- gsub(" ", "", il_map$subregion)
+```
 
-
+```{r}
+# Join ACS and map data
 acs_map <-
   acs_il_c %>% 
   inner_join(il_map, by = "subregion")
@@ -79,9 +84,9 @@ head(acs_map)
 
 After you do this, plot a map of Illinois with Counties colored by per capita income.
 
-```{rfig.height = 6.5, fig.width = 6}
+```{r, fig.height = 6.5, fig.width = 6}
 ggplot(acs_map) + 
-geom_polygon(aes(x = long, y = lat, group = group, fill = income))
+  geom_polygon(aes(x = long, y = lat, group = group, fill = income))
 ```
 
 
