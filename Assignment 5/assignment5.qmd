@@ -53,27 +53,27 @@ head(il_map)
 Join the ACS data with the map data. Note that `il_map` has a column `subregion` which includes county names. We need a corresponding variable in the ACS data to join both data sets. This needs some transformations, among which the function `tolower()` might be useful. Call the joined data `acs_map`.
 
 ```{r}
-# In ACS data, 
+# Manipulating to match datasets for merging
+
+# In ACS data, rename NAME to subregion
 acs_il_c <- acs_il_c %>% 
   rename(subregion = NAME)
 
-acs_il_c$subregion <- gsub(' County, Illinois', '', acs_il_c$subregion) %>% 
-  tolower()
-
-acs_with_loc <- 
-  acs_il %>% 
-  mutate(location = no_cityvill) #add new variable with only city names
-
-tolower(NAME)
-
-# Check headers
-# acs_with_loc %>% 
-#   head()
+# Take out unnecessary part of subregion variable
+acs_il_c$subregion <- 
+  gsub(' County, Illinois', '', acs_il_c$subregion) %>% 
+  tolower() #make all lowercase
+head(acs_il_c)
 
 
-merged <-
-  city_ranking %>% 
-  inner_join(acs_with_loc, by = "location")
+# In il_map data, remove spaces in subregion column
+il_map$subregion <- gsub(" ", "", il_map$subregion)
+
+
+acs_map <-
+  acs_il_c %>% 
+  inner_join(il_map, by = "subregion")
+head(acs_map)
 ```
 
 
