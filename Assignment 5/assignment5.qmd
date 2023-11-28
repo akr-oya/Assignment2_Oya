@@ -96,9 +96,86 @@ ggplot(acs_map) +
 
 We want to find clusters of counties that are similar in their population, average household income and per capita income. First, clean the data so that you have the appropriate variables to use for clustering. Next, create the distance matrix of the cleaned data. This distance matrix can be used to cluster counties, e.g. using the ward method.
 
+```{r}
+c_data <-
+  cc_2018 %>%
+  filter(primary_type == "NARCOTICS") %>%
+  select(longitude, latitude)
+```
+
+Then, we can run \`kmeans()\` to employ K-Means Clustering. Based on the previous plot we assume that a three cluster solution is adequate. Note that \`nstart\` can be used to try out several starting points for the clusters.
+
+```{r}
+km_1 <- kmeans(c_data, 3, nstart = 20)
+km_1
+```
+
+Given the K-Means three cluster solution, we can again plot our crime incidents, now colored by cluster membership.
+
+```{r}
+ggmap(map) + geom_point(data = c_data, aes(x = longitude, y = latitude, color = as.factor(km_1$cluster)), alpha = 0.5)
+```
+
+However, grouping crime locations into three clusters might not be the optimal solution. We can utilize `fviz_nbclust` to compute the within cluster sums of squares over a range of cluster solutions and to visualize the result.
+
+```{r}
+fviz_nbclust(c_data, #data set we want to use
+             kmeans, #cluster method
+             method = "wss", #method used for estimating the optimal number of clusters
+             k.max = 25)
+```
+
+Based on the "elbow" criterion, we may want to choose k = 6 as the optimal number of clusters in this case. Therefore, we run `kmeans()` again and also plot the new cluster solution to inspect the new result.
+
+```{r}
+km_2 <- kmeans(c_data, 15, nstart = 20)
+
+ggmap(map) + geom_point(data = c_data, aes(x = longitude, y = latitude, color = as.factor(km_2$cluster)), alpha = 0.5)
+```
+
+
+
+
 Plot the dendrogram to find a reasonable number of clusters. Draw boxes around the clusters of your cluster solution.
 
+```{r, fig.height = 4, fig.width = 6}
+# Plot dendrogram and try different K numbers
+plot(hc, labels = FALSE, hang=-1, cex=0.1)  
+rect.hclust(hc, k = 30, border = "red")  # assuming 3 clusters
+
+plot(hc, labels = FALSE)  
+rect.hclust(hc, k = 6, border = "red")  # assuming 6 clusters
+
+plot(hc, labels = FALSE)  
+rect.hclust(hc, k = 9, border = "red")  # assuming 9 clusters
+
+cluster <- agnes(map_matrix, diss="TRUE", method="ward")
+ dimnames(map_matrix) = list(docnames, docnames)
+ plot(cluster)
+```
+
+
 Visualize the county clusters on a map. For this task, create a new `acs_map` object that now also includes cluster membership as a new column. This column should be called `cluster`.
+
+```{r}
+# Cut the tree to create a desired number of clusters
+clust_membership <- cutree(hc, k = 10)
+
+# Add cluster memberships to original data
+acs_map$cluster <- as.factor(clust_membership)
+```
+
+```{r}
+# Plot map
+ggplot() +
+  geom_polygon(data =acs_map, aes(x = long, y = lat, group = subregion, fill = cluster), 
+               color = "black", linewidth = 0.25) +
+  coord_quickmap() +
+  labs(title = "County Clusters Based on Population and Income", 
+       fill = "Cluster") +
+  theme_minimal()
+```
+
 
 ## Census Tracts
 
